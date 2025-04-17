@@ -196,7 +196,7 @@ int main(void)
     WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
 
     //---------------- Configure ADC ---------------
-    // Set P1.0 as ADC input
+    // Set P1.1 as ADC input
     P1SEL0 |= BIT1;
     P1SEL1 |= BIT1;
     ADCCTL0 &= ~ADCSHT;
@@ -680,11 +680,6 @@ __interrupt void USCI_B1_ISR(void)
                 int raw_temp = ((lm92_data[0] << 8) | lm92_data[1]) >> 3;
                 float temp_C = raw_temp * 0.0625;  // LM92 resolution
                 lm92_samples[lm92_sample_index++] = (unsigned int)(temp_C * 10); // Store in tenths of a degree
-                if (lm92_sample_index >= window_size)
-                {
-                    lm92_samples_collected = 1;
-                    lm92_sample_index = 0;
-                }
                 if (lm92_samples_collected == 1)
                 {
                     // Average and store in tx_buffer
@@ -696,6 +691,11 @@ __interrupt void USCI_B1_ISR(void)
                     lm92_temperature_decimal = avg % 10;
                     tx_buffer[3] = lm92_temperature_integer;     // Integer part
                     tx_buffer[4] = lm92_temperature_decimal;     // Decimal part
+                }
+                if (lm92_sample_index >= window_size)
+                {
+                    lm92_samples_collected = 1;
+                    lm92_sample_index = 0;
                 }
                 UCB1IE &= ~UCRXIE1;  // Disable RX interrupt
             }
